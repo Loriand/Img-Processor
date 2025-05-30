@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procesador de Imágenes Avanzado</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        .glass-card {
+            background: rgba(249, 250, 251, 0.8);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .upload-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-block;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 4px 15px 0 rgba(102, 126, 234, 0.4);
+        }
+        .upload-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px 0 rgba(102, 126, 234, 0.6);
+        }
+        .action-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            box-shadow: 0 4px 15px 0 rgba(16, 185, 129, 0.4);
+        }
+        .action-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px 0 rgba(16, 185, 129, 0.6);
+        }
+        .action-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .secondary-button {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            box-shadow: 0 4px 15px 0 rgba(107, 114, 128, 0.4);
+        }
+        .secondary-button:hover:not(:disabled) {
+            box-shadow: 0 8px 20px 0 rgba(107, 114, 128, 0.6);
+        }
+        .image-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            width: 180px;
+            text-align: center;
+            box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+            position: relative;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        .image-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+        }
+        .image-card p {
+            font-size: 0.875rem;
+            word-break: break-all;
+            color: #4b5563;
+            margin-bottom: 0.75rem;
+            height: 2.5rem;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        .remove-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 0.375rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px 0 rgba(239, 68, 68, 0.3);
+        }
+        .remove-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px 0 rgba(239, 68, 68, 0.5);
+        }
+        .download-btn {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            font-weight: 500;
+            box-shadow: 0 2px 8px 0 rgba(59, 130, 246, 0.3);
+        }
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px 0 rgba(59, 130, 246, 0.5);
+        }
+        .zip-download-btn {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+            box-shadow: 0 4px 15px 0 rgba(139, 92, 246, 0.4);
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+        }
+        .zip-download-btn:hover {
+            box-shadow: 0 8px 20px 0 rgba(139, 92, 246, 0.6);
+        }
+        .radio-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+        .radio-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+        .radio-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        .threshold-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border: 2px solid #e5e7eb;
+        }
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            box-shadow: 0 2px 6px 0 rgba(102, 126, 234, 0.4);
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 6px 0 rgba(102, 126, 234, 0.4);
+        }
+        .message-box {
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .message-box.error {
+            background: rgba(254, 242, 242, 0.9);
+            color: #dc2626;
+            border: 2px solid #fecaca;
+        }
+        .message-box.success {
+            background: rgba(240, 253, 244, 0.9);
+            color: #059669;
+            border: 2px solid #bbf7d0;
+        }
+        .message-box.info {
+            background: rgba(239, 246, 255, 0.9);
+            color: #2563eb;
+            border: 2px solid #bfdbfe;
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .processed-image-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 4px 15px 0 rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        .processed-image-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px 0 rgba(0, 0, 0, 0.15);
+        }
+        .processed-image-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .hidden {
+            display: none;
+        }
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #1f2937;
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Procesador de Imágenes Avanzado</h1>
+
+        <div class="glass-card">
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
+                <input type="file" id="imageUpload" multiple accept="image/*">
+                <label for="imageUpload" class="upload-button">
+                    📁 Cargar Imágenes
+                </label>
+                <button id="refreshApp" class="action-button secondary-button">
+                    🔄 Refrescar Aplicación
+                </button>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2>📷 Imágenes Cargadas</h2>
+            <div id="imagePreviews" class="preview-grid"></div>
+            <div id="noImagesMessage" class="text-center text-gray-500 mt-4 py-8 hidden">
+                <div class="text-6xl mb-4">📸</div>
+                <p class="text-lg">No hay imágenes cargadas</p>
+                <p class="text-sm">Selecciona imágenes para comenzar</p>
+            </div>
+        </div>
+
+        <div class="glass-card">
+            <h2>⚙️ Opciones de Procesamiento</h2>
+            
+            <div class="flex flex-col sm:flex-row gap-4 mb-6">
+                <div class="radio-card" data-option="luminance">
+                    <input type="radio" id="luminance" name="conversionOption" value="luminance" checked class="hidden">
+                    <div class="text-2xl mb-2">🌓</div>
+                    <h3 class="font-semibold mb-1">Escala de Grises (Luminancia)</h3>
+                    <p class="text-sm text-gray-600">Algoritmo perceptual avanzado</p>
+                </div>
+                
+                <div class="radio-card" data-option="average">
+                    <input type="radio" id="average" name="conversionOption" value="average" class="hidden">
+                    <div class="text-2xl mb-2">📊</div>
+                    <h3 class="font-semibold mb-1">Escala de Grises (Promedio)</h3>
+                    <p class="text-sm text-gray-600">Promedio simple RGB</p>
+                </div>
+                
+                <div class="radio-card" data-option="blackwhite">
+                    <input type="radio" id="blackwhite" name="conversionOption" value="blackwhite" class="hidden">
+                    <div class="text-2xl mb-2">⚫</div>
+                    <h3 class="font-semibold mb-1">Blanco y Negro</h3>
+                    <p class="text-sm text-gray-600">Umbral personalizable</p>
+                </div>
+            </div>
+
+            <div id="thresholdSection" class="threshold-section hidden">
+                <div class="text-center">
+                    <label class="block text-gray-700 font-semibold mb-4">
+                        🎯 Umbral de Blanco y Negro: <span id="thresholdValue" class="text-purple-600">128</span>
+                    </label>
+                    <input type="range" id="thresholdRange" min="0" max="255" value="128" class="slider">
+                    <div class="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>Más Negro (0)</span>
+                        <span>Más Blanco (255)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="threshold-section">
+                <div class="text-center">
+                    <label class="block text-gray-700 font-semibold mb-4">
+                        📱 Calidad de Imagen (JPEG): <span id="qualityValue" class="text-purple-600">85</span>%
+                    </label>
+                    <input type="range" id="qualityRange" min="10" max="100" value="85" class="slider">
+                    <div class="flex justify-between text-xs text-gray-500 mt-2">
+                        <span>Menor tamaño (10%)</span>
+                        <span>Mejor calidad (100%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-6">
+                <button id="processImages" class="action-button">
+                    🚀 Procesar y Descargar
+                </button>
+            </div>
+        </div>
+
+        <div id="downloadSection" class="glass-card hidden">
+            <h2>✨ Imágenes Procesadas</h2>
+            
+            <div class="text-center mb-4">
+                <button id="downloadAllZip" class="action-button zip-download-btn">
+                    📦 Descargar Todas (ZIP)
+                </button>
+            </div>
+            
+            <div id="processedImagesGrid" class="download-grid"></div>
+        </div>
+
+        <div id="messageBox" class="message-box hidden"></div>
+    </div>
+
+    <script>
+        class ImageProcessor {
+            constructor() {
+                this.uploadedFiles = [];
+                this.processedImages = [];
+                this.initializeElements();
+                this.bindEvents();
+                this.updateNoImagesMessage();
+            }
+
+            initializeElements() {
+                this.imageUpload = document.getElementById('imageUpload');
+                this.imagePreviews = document.getElementById('imagePreviews');
+                this.qualityRange = document.getElementById('qualityRange');
+                this.qualityValue = document.getElementById('qualityValue');
+                this.thresholdRange = document.getElementById('thresholdRange');
+                this.thresholdValue = document.getElementById('thresholdValue');
+                this.thresholdSection = document.getElementById('thresholdSection');
+                this.processImagesButton = document.getElementById('processImages');
+                this.refreshAppButton = document.getElementById('refreshApp');
+                this.downloadSection = document.getElementById('downloadSection');
+                this.processedImagesGrid = document.getElementById('processedImagesGrid');
+                this.downloadAllZip = document.getElementById('downloadAllZip');
+                this.messageBox = document.getElementById('messageBox');
+                this.noImagesMessage = document.getElementById('noImagesMessage');
+                this.radioCards = document.querySelectorAll('.radio-card');
+            }
+
+            bindEvents() {
+                // File upload
+                this.imageUpload.addEventListener('change', (e) => this.handleImageUpload(e));
+                
+                // Quality and threshold sliders
+                this.qualityRange.addEventListener('input', () => {
+                    this.qualityValue.textContent = this.qualityRange.value;
+                });
+                
+                this.thresholdRange.addEventListener('input', () => {
+                    this.thresholdValue.textContent = this.thresholdRange.value;
+                });
+
+                // Radio card selection
+                this.radioCards.forEach(card => {
+                    card.addEventListener('click', () => {
+                        const option = card.dataset.option;
+                        this.selectConversionOption(option);
+                    });
+                });
+
+                // Process images
+                this.processImagesButton.addEventListener('click', () => this.processImages());
+                
+                // Refresh app
+                this.refreshAppButton.addEventListener('click', () => location.reload());
+                
+                // Download all ZIP
+                this.downloadAllZip.addEventListener('click', () => this.downloadAllAsZip());
+            }
+
+            selectConversionOption(option) {
+                // Update radio buttons
+                document.getElementById(option).checked = true;
+                
+                // Update visual selection
+                this.radioCards.forEach(card => card.classList.remove('selected'));
+                document.querySelector(`[data-option="${option}"]`).classList.add('selected');
+                
+                // Show/hide threshold section
+                if (option === 'blackwhite') {
+                    this.thresholdSection.classList.remove('hidden');
+                } else {
+                    this.thresholdSection.classList.add('hidden');
+                }
+            }
+
+            showMessage(message, type = 'error') {
+                this.messageBox.textContent = message;
+                this.messageBox.className = `message-box ${type}`;
+                this.messageBox.classList.remove('hidden');
+                
+                if (type === 'success' || type === 'info') {
+                    setTimeout(() => this.hideMessage(), 3000);
+                }
+            }
+
+            hideMessage() {
+                this.messageBox.classList.add('hidden');
+            }
+
+            handleImageUpload(event) {
+                this.hideMessage();
+                const files = Array.from(event.target.files);
+                
+                files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        if (!this.uploadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                            this.uploadedFiles.push(file);
+                            this.renderImagePreview(file);
+                        } else {
+                            this.showMessage(`La imagen "${file.name}" ya ha sido cargada.`, 'info');
+                        }
+                    } else {
+                        this.showMessage('Solo se permiten archivos de imagen.', 'error');
+                    }
+                });
+                
+                this.imageUpload.value = '';
+                this.updateNoImagesMessage();
+            }
+
+            renderImagePreview(file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageCard = document.createElement('div');
+                    imageCard.classList.add('image-card');
+                    imageCard.dataset.filename = file.name;
+
+                    imageCard.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <p title="${file.name}">${file.name}</p>
+                        <button class="remove-btn" onclick="imageProcessor.removeImage('${file.name}', ${file.size})">
+                            🗑️ Eliminar
+                        </button>
+                    `;
+
+                    this.imagePreviews.appendChild(imageCard);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            removeImage(fileName, fileSize) {
+                this.uploadedFiles = this.uploadedFiles.filter(f => !(f.name === fileName && f.size === fileSize));
+                
+                const imageCard = document.querySelector(`[data-filename="${fileName}"]`);
+                if (imageCard) {
+                    imageCard.remove();
+                }
+                
+                if (this.uploadedFiles.length === 0) {
+                    this.downloadSection.classList.add('hidden');
+                    this.processedImagesGrid.innerHTML = '';
+                    this.processedImages = [];
+                }
+                
+                this.updateNoImagesMessage();
+            }
+
+            updateNoImagesMessage() {
+                if (this.uploadedFiles.length === 0) {
+                    this.noImagesMessage.classList.remove('hidden');
+                } else {
+                    this.noImagesMessage.classList.add('hidden');
+                }
+            }
+
+            async processImages() {
+                if (this.uploadedFiles.length === 0) {
+                    this.showMessage('Por favor, carga al menos una imagen antes de procesar.', 'error');
+                    return;
+                }
+
+                this.hideMessage();
+                this.downloadSection.classList.add('hidden');
+                this.processedImagesGrid.innerHTML = '';
+                this.processedImages = [];
+
+                const conversionOption = document.querySelector('input[name="conversionOption"]:checked').value;
+                const quality = parseInt(this.qualityRange.value);
+                const threshold = parseInt(this.thresholdRange.value);
+
+                this.processImagesButton.textContent = '⏳ Procesando...';
+                this.processImagesButton.disabled = true;
+
+                try {
+                    for (let i = 0; i < this.uploadedFiles.length; i++) {
+                        const file = this.uploadedFiles[i];
+                        const processedImageData = await this.processImage(file, conversionOption, quality, threshold);
+                        this.processedImages.push(processedImageData);
+                        
+                        // Update progress
+                        this.processImagesButton.textContent = `⏳ Procesando... (${i + 1}/${this.uploadedFiles.length})`;
+                    }
+
+                    this.renderProcessedImages();
+                    this.downloadSection.classList.remove('hidden');
+                    this.showMessage(`${this.processedImages.length} imágenes procesadas exitosamente.`, 'success');
+
+                } catch (error) {
+                    console.error('Error al procesar imágenes:', error);
+                    this.showMessage('Ocurrió un error al procesar las imágenes. Inténtalo de nuevo.', 'error');
+                } finally {
+                    this.processImagesButton.textContent = '🚀 Procesar y Descargar';
+                    this.processImagesButton.disabled = false;
+                }
+            }
+
+            async processImage(file, conversionOption, quality, threshold) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+
+                        canvas.width = img.naturalWidth;
+                        canvas.height = img.naturalHeight;
+                        ctx.drawImage(img, 0, 0);
+
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imageData.data;
+
+                        // Apply conversion based on selected option
+                        for (let i = 0; i < data.length; i += 4) {
+                            const r = data[i];
+                            const g = data[i + 1];
+                            const b = data[i + 2];
+
+                            let gray;
+                            switch (conversionOption) {
+                                case 'luminance':
+                                    // Weighted average based on human eye sensitivity
+                                    gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                                    break;
+                                case 'average':
+                                    // Simple average
+                                    gray = Math.round((r + g + b) / 3);
+                                    break;
+                                case 'blackwhite':
+                                    // Luminance-based threshold
+                                    gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+                                    gray = gray < threshold ? 0 : 255;
+                                    break;
+                            }
+
+                            data[i] = gray;     // Red
+                            data[i + 1] = gray; // Green
+                            data[i + 2] = gray; // Blue
+                        }
+
+                        ctx.putImageData(imageData, 0, 0);
+
+                        canvas.toBlob((blob) => {
+                            const processedName = file.name.split('.')[0] + '.jpg';
+                            const url = URL.createObjectURL(blob);
+                            
+                            resolve({
+                                name: processedName,
+                                blob: blob,
+                                url: url,
+                                originalName: file.name
+                            });
+                        }, 'image/jpeg', quality / 100);
+
+                        URL.revokeObjectURL(img.src);
+                    };
+                    img.src = URL.createObjectURL(file);
+                });
+            }
+
+            renderProcessedImages() {
+                this.processedImages.forEach(imageData => {
+                    const card = document.createElement('div');
+                    card.className = 'processed-image-card';
+                    
+                    card.innerHTML = `
+                        <img src="${imageData.url}" alt="${imageData.name}">
+                        <p class="font-medium text-sm mb-2" title="${imageData.name}">${imageData.name}</p>
+                        <a href="${imageData.url}" download="${imageData.name}" class="download-btn">
+                            💾 Descargar
+                        </a>
+                    `;
+                    
+                    this.processedImagesGrid.appendChild(card);
+                });
+            }
+
+            async downloadAllAsZip() {
+                if (this.processedImages.length === 0) return;
+
+                try {
+                    const zip = new JSZip();
+                    
+                    this.processedImages.forEach(imageData => {
+                        zip.file(imageData.name, imageData.blob);
+                    });
+
+                    const zipBlob = await zip.generateAsync({type: "blob"});
+                    const url = URL.createObjectURL(zipBlob);
+                    
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `imagenes_procesadas_${Date.now()}.zip`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    URL.revokeObjectURL(url);
+                    
+                    this.showMessage('Descarga del archivo ZIP iniciada.', 'success');
+                } catch (error) {
+                    console.error('Error creating ZIP:', error);
+                    this.showMessage('Error al crear el archivo ZIP.', 'error');
+                }
+            }
+        }
+
+        // Initialize the application
+        const imageProcessor = new ImageProcessor();
+
+        // Initialize first radio card as selected
+        document.querySelector('[data-option="luminance"]').classList.add('selected');
+    </script>
+</body>
+</html>
